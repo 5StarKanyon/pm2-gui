@@ -94,8 +94,12 @@ async function showLogs(id) {
   const logsArea = document.getElementById('logsArea');
   logsArea.textContent = 'Loading logs...';
   try {
-    const logs = await window.pm2Api.logs(id);
-    logsArea.textContent = logs || 'No logs found.';
+    const result = await window.pm2Api.logs({ id, lines: 200 });
+    if (result && typeof result === 'object') {
+      logsArea.textContent = result.log || 'No logs found.';
+    } else {
+      logsArea.textContent = result || 'No logs found.';
+    }
   } catch (e) {
     logsArea.textContent = 'Error loading logs.';
   }
