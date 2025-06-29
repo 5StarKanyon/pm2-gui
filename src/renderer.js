@@ -217,11 +217,27 @@ window.showLiveLogModal = function(id, name) {
   document.getElementById('pauseLogBtn').disabled = false;
   document.getElementById('resumeLogBtn').disabled = true;
 
+  let logOffset = 0;
+  let initial = true;
+
   async function updateLiveLog() {
     if (liveLogPaused) return;
-    const logs = await window.pm2Api.logs(id);
-    area.textContent = logs || 'No logs.';
-    area.scrollTop = area.scrollHeight;
+    let result;
+    if (initial) {
+      result = await window.pm2Api.logs({ id, lines: 200 });
+      initial = false;
+    } else {
+      result = await window.pm2Api.logs({ id, offset: logOffset });
+    }
+    if (result && typeof result === 'object') {
+      if (initial) {
+        area.textContent = result.log || 'No logs.';
+      } else {
+        if (result.log) area.textContent += (area.textContent ? '\n' : '') + result.log;
+      }
+      logOffset = result.newOffset || logOffset;
+      area.scrollTop = area.scrollHeight;
+    }
   }
   updateLiveLog();
   liveLogInterval && clearInterval(liveLogInterval);

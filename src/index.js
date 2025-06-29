@@ -91,16 +91,47 @@ ipcMain.handle('pm2-delete', async (event, id) => {
   await ensurePM2Connected();
   return pm2Promise('delete', id);
 });
-ipcMain.handle('pm2-logs', async (event, id) => {
+ipcMain.handle('pm2-logs', async (event, arg) => {
   await ensurePM2Connected();
-  // For logs, use pm2's log file path
+  // arg can be id (number) or {id, offset, lines}
+  let id, offset = 0, lines = 200;
+  if (typeof arg === 'object' && arg !== null) {
+    id = arg.id;
+    offset = arg.offset || 0;
+    lines = arg.lines || 200;
+  } else {
+    id = arg;
+  }
   return pm2Promise('describe', id).then(proc => {
-    if (!proc[0] || !proc[0].pm2_env || !proc[0].pm2_env.pm_out_log_path) return '';
+    if (!proc[0] || !proc[0].pm2_env || !proc[0].pm2_env.pm_out_log_path) return { log: '', newOffset: 0 };
     const fs = require('fs');
+    const logPath = proc[0].pm2_env.pm_out_log_path;
     try {
-      return fs.readFileSync(proc[0].pm2_env.pm_out_log_path, 'utf8');
+      const stats = fs.statSync(logPath);
+      let start = 0;
+      let log = '';
+      let newOffset = stats.size;
+      if (offset && offset < stats.size) {
+        // Read new data since offset
+        const fd = fs.openSync(logPath, 'r');
+        const buf = Buffer.alloc(stats.size - offset);
+        fs.readSync(fd, buf, 0, stats.size - offset, offset);
+        fs.closeSync(fd);
+        log = buf.toString();
+      } else {
+        // Tail last N lines
+        const fd = fs.openSync(logPath, 'r');
+        const chunkSize = Math.min(64 * 1024, stats.size); // Read last 64KB max
+        const buf = Buffer.alloc(chunkSize);
+        fs.readSync(fd, buf, 0, chunkSize, stats.size - chunkSize);
+        fs.closeSync(fd);
+        const all = buf.toString();
+        const linesArr = all.split(/\r?\n/).filter(Boolean);
+        log = linesArr.slice(-lines).join('\n');
+      }
+      return { log, newOffset };
     } catch (e) {
-      return '';
+      return { log: '', newOffset: 0 };
     }
   });
 });
