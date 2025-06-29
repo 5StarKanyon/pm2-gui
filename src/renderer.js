@@ -938,38 +938,38 @@ startProcModalEl.addEventListener('hidden.bs.modal', () => {
   showWizardStep(1);
 });
 
-// --- Window bar controls robust attachment with debug and fallback ---
+// --- Window bar controls robust attachment with UI toast feedback ---
 function attachWindowBarControls() {
   const minBtn = document.getElementById('minBtn');
   const maxBtn = document.getElementById('maxBtn');
   const closeBtn = document.getElementById('closeBtn');
   if (minBtn) {
     minBtn.onclick = () => {
-      console.log('Minimize button clicked');
+      showToast('Minimize button clicked', 'info');
       if (window.windowControls && window.windowControls.minimize) {
         window.windowControls.minimize();
       } else {
-        alert('Minimize: windowControls not available');
+        showToast('Minimize: windowControls not available', 'danger');
       }
     };
   }
   if (maxBtn) {
     maxBtn.onclick = () => {
-      console.log('Maximize button clicked');
+      showToast('Maximize button clicked', 'info');
       if (window.windowControls && window.windowControls.maximize) {
         window.windowControls.maximize();
       } else {
-        alert('Maximize: windowControls not available');
+        showToast('Maximize: windowControls not available', 'danger');
       }
     };
   }
   if (closeBtn) {
     closeBtn.onclick = () => {
-      console.log('Close button clicked');
+      showToast('Close button clicked', 'info');
       if (window.windowControls && window.windowControls.close) {
         window.windowControls.close();
       } else {
-        alert('Close: windowControls not available');
+        showToast('Close: windowControls not available', 'danger');
       }
     };
   }
