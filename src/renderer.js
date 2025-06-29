@@ -938,48 +938,31 @@ startProcModalEl.addEventListener('hidden.bs.modal', () => {
   showWizardStep(1);
 });
 
-// --- Window bar controls robust attachment with UI toast feedback ---
-function attachWindowBarControls() {
-  const minBtn = document.getElementById('minBtn');
-  const maxBtn = document.getElementById('maxBtn');
-  const closeBtn = document.getElementById('closeBtn');
-  if (minBtn) {
-    minBtn.onclick = () => {
-      showToast('Minimize button clicked', 'info');
-      if (window.windowControls && window.windowControls.minimize) {
-        window.windowControls.minimize();
-      } else {
-        showToast('Minimize: windowControls not available', 'danger');
-      }
-    };
-  }
-  if (maxBtn) {
-    maxBtn.onclick = () => {
-      showToast('Maximize button clicked', 'info');
-      if (window.windowControls && window.windowControls.maximize) {
-        window.windowControls.maximize();
-      } else {
-        showToast('Maximize: windowControls not available', 'danger');
-      }
-    };
-  }
-  if (closeBtn) {
-    closeBtn.onclick = () => {
-      showToast('Close button clicked', 'info');
-      if (window.windowControls && window.windowControls.close) {
-        window.windowControls.close();
-      } else {
-        showToast('Close: windowControls not available', 'danger');
-      }
-    };
-  }
+// --- Window bar controls: attach immediately, no DOMContentLoaded, no setTimeout ---
+const minBtn = document.getElementById('minBtn');
+const maxBtn = document.getElementById('maxBtn');
+const closeBtn = document.getElementById('closeBtn');
+if (minBtn) {
+  minBtn.onclick = () => {
+    if (window.windowControls && window.windowControls.minimize) {
+      window.windowControls.minimize();
+    }
+  };
 }
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', attachWindowBarControls);
-} else {
-  attachWindowBarControls();
+if (maxBtn) {
+  maxBtn.onclick = () => {
+    if (window.windowControls && window.windowControls.maximize) {
+      window.windowControls.maximize();
+    }
+  };
 }
-setTimeout(attachWindowBarControls, 500);
+if (closeBtn) {
+  closeBtn.onclick = () => {
+    if (window.windowControls && window.windowControls.close) {
+      window.windowControls.close();
+    }
+  };
+}
 
 // --- FUTURE IDEAS ---
 // - Add bulk actions (multi-select processes)
