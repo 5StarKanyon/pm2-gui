@@ -20,6 +20,14 @@ if (contextBridge && ipcRenderer) {
     logs: (id) => ipcRenderer.invoke('pm2-logs', id), // Accepts id or {id, offset, lines}
     getConfig: (id) => ipcRenderer.invoke('pm2-get-config', id),
     setConfig: (id, config) => ipcRenderer.invoke('pm2-set-config', id, config),
+    // --- New APIs for advanced features ---
+    getServiceStatus: () => ipcRenderer.invoke('pm2-get-service-status'),
+    installService: () => ipcRenderer.invoke('pm2-install-service'),
+    uninstallService: () => ipcRenderer.invoke('pm2-uninstall-service'),
+    getDependencies: () => ipcRenderer.invoke('pm2-get-dependencies'),
+    getGlobalEnv: () => ipcRenderer.invoke('pm2-get-global-env'),
+    setGlobalEnv: (env) => ipcRenderer.invoke('pm2-set-global-env', env),
+    getProcessHistory: (id) => ipcRenderer.invoke('pm2-get-process-history', id),
   });
 
   // Window controls for custom title bar

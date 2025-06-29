@@ -6,7 +6,7 @@
 
 const { Buffer } = require('buffer'); // Fix: Ensure Buffer is defined for Node.js
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const pm2 = require('pm2');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -19,8 +19,8 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    frame: false, // Hide the default OS window bar
-    titleBarStyle: 'hidden', // Hide the native title bar
+    frame: true, // Show the default OS window bar
+    // Remove custom titleBarStyle for native controls
     backgroundColor: '#181a1b', // Dark background
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'), // Secure contextBridge
@@ -33,6 +33,7 @@ const createWindow = () => {
 // App ready: create window, handle macOS dock behavior
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -159,6 +160,105 @@ ipcMain.handle('pm2-set-config', async (event, id, config) => {
   await ensurePM2Connected();
   // PM2 does not support direct config editing; this is a placeholder
   return { success: false, message: 'Direct config editing not supported via API.' };
+});
+
+// --- PM2 Windows Service, Dependency, Env, and History IPC HANDLERS ---
+const fs = require('fs');
+const os = require('os');
+
+// PM2 Windows Service Status
+ipcMain.handle('pm2-get-service-status', async () => {
+  // Check if pm2-windows-service is installed and running
+  try {
+    const Service = require('node-windows').Service;
+    const svc = new Service({
+      name: 'PM2',
+    });
+    // node-windows Service API is async, but we can check existence by file
+    const exists = fs.existsSync(path.join(os.homedir(), 'AppData', 'Roaming', 'pm2', 'service-install.log'));
+    return { installed: exists };
+  } catch (e) {
+    return { installed: false, error: e.message };
+  }
+});
+// Install PM2 as Windows Service
+ipcMain.handle('pm2-install-service', async () => {
+  // Use pm2-windows-service CLI
+  const { execSync } = require('child_process');
+  try {
+    execSync('npx pm2-service-install -y', { stdio: 'ignore' });
+    return { success: true };
+  } catch (e) {
+    throw new Error(e.message || 'Failed to install service');
+  }
+});
+// Uninstall PM2 Windows Service
+ipcMain.handle('pm2-uninstall-service', async () => {
+  const { execSync } = require('child_process');
+  try {
+    execSync('npx pm2-service-uninstall -y', { stdio: 'ignore' });
+    return { success: true };
+  } catch (e) {
+    throw new Error(e.message || 'Failed to uninstall service');
+  }
+});
+// Get process dependencies (from config)
+ipcMain.handle('pm2-get-dependencies', async () => {
+  await ensurePM2Connected();
+  const list = await pm2Promise('list');
+  return list.map(proc => {
+    const env = proc.pm2_env || {};
+    return {
+      name: env.name,
+      dependsOn: Array.isArray(env.dependsOn) ? env.dependsOn : [],
+    };
+  });
+});
+// Global env management (simple JSON file in userData)
+const globalEnvPath = path.join(app.getPath('userData'), 'global.env.json');
+ipcMain.handle('pm2-get-global-env', async () => {
+  try {
+    if (fs.existsSync(globalEnvPath)) {
+      return JSON.parse(fs.readFileSync(globalEnvPath, 'utf8'));
+    }
+    return {};
+  } catch (e) {
+    return {};
+  }
+});
+ipcMain.handle('pm2-set-global-env', async (event, env) => {
+  try {
+    fs.writeFileSync(globalEnvPath, JSON.stringify(env, null, 2), 'utf8');
+    return { success: true };
+  } catch (e) {
+    throw new Error('Failed to save global env: ' + e.message);
+  }
+});
+// Process history (simulate with restart/crash info from pm2_env)
+ipcMain.handle('pm2-get-process-history', async (event, id) => {
+  await ensurePM2Connected();
+  const desc = await pm2Promise('describe', id);
+  const env = desc[0]?.pm2_env;
+  if (!env) return [];
+  const history = [];
+  if (env.pm_uptime) {
+    history.push({ date: new Date(env.pm_uptime).toLocaleString(), event: 'Started', code: 0 });
+  }
+  if (Array.isArray(env.axm_actions)) {
+    env.axm_actions.forEach((a) => {
+      if (a.action === 'restart') {
+        history.push({ date: new Date(a.date).toLocaleString(), event: 'Restarted', code: a.code });
+      }
+    });
+  }
+  if (env.exit_code !== undefined && env.exit_code !== 0) {
+    history.push({ date: new Date(env.pm_uptime).toLocaleString(), event: 'Crashed', code: env.exit_code });
+  }
+  // Add restart count
+  if (env.restart_time) {
+    history.push({ date: '-', event: 'Restart Count', code: env.restart_time });
+  }
+  return history;
 });
 
 // --- Window bar actions (minimize, maximize, close) ---

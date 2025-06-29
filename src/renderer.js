@@ -250,6 +250,12 @@ function renderProcessTable() {
   table.innerHTML = '';
   for (const proc of filtered) {
     const env = proc.pm2_env;
+    const uptime = env.pm_uptime ? ((Date.now() - env.pm_uptime) / 1000) : 0;
+    const uptimeStr = env.pm_uptime ?
+      (uptime > 86400 ? Math.floor(uptime / 86400) + 'd ' : '') +
+      new Date(uptime * 1000).toISOString().substr(11, 8) : '-';
+    const lastRestart = env.pm_uptime ? new Date(env.pm_uptime).toLocaleString() : '-';
+    const restartCount = env.restart_time || 0;
     const row = document.createElement('tr');
     row.innerHTML = `
       <td><input type="checkbox" class="proc-select" data-id="${proc.pm_id}" onclick="handleSelectProc(${proc.pm_id}, this.checked)" ${selectedProcs.has(proc.pm_id) ? 'checked' : ''}></td>
@@ -258,6 +264,9 @@ function renderProcessTable() {
       <td>${proc.pid}</td>
       <td>${proc.monit.cpu}%</td>
       <td>${(proc.monit.memory / 1024 / 1024).toFixed(1)} MB</td>
+      <td>${uptimeStr}</td>
+      <td>${restartCount}</td>
+      <td>${lastRestart}</td>
       <td>
         <button class="btn btn-sm btn-info" onclick="showLogs(${proc.pm_id})">Logs</button>
         <button class="btn btn-sm btn-secondary" onclick="showConfig(${proc.pm_id})">Config</button>
@@ -266,6 +275,7 @@ function renderProcessTable() {
         <button class="btn btn-sm btn-outline-danger" onclick="deleteProc(${proc.pm_id})">Delete</button>
         <button class="btn btn-sm btn-dark ms-1" onclick="showLiveLogModal(${proc.pm_id}, '${env.name.replace(/'/g, "'")}')">Live Log</button>
         <button class="btn btn-sm btn-primary ms-1" onclick="showMonitorModal(${proc.pm_id}, '${env.name.replace(/'/g, "'")}')">Monitor</button>
+        <button class="btn btn-sm btn-outline-secondary ms-1" onclick="showProcessHistory(${proc.pm_id})">History</button>
       </td>
     `;
     table.appendChild(row);
@@ -938,31 +948,150 @@ startProcModalEl.addEventListener('hidden.bs.modal', () => {
   showWizardStep(1);
 });
 
-// --- Window bar controls: attach immediately, no DOMContentLoaded, no setTimeout ---
-const minBtn = document.getElementById('minBtn');
-const maxBtn = document.getElementById('maxBtn');
-const closeBtn = document.getElementById('closeBtn');
-if (minBtn) {
-  minBtn.onclick = () => {
-    if (window.windowControls && window.windowControls.minimize) {
-      window.windowControls.minimize();
+// --- PM2 Windows Service Wizard ---
+window.showServiceWizard = async function () {
+  const modal = new bootstrap.Modal(document.getElementById('serviceWizardModal'));
+  const statusDiv = document.getElementById('serviceStatus');
+  const installBtn = document.getElementById('serviceInstallBtn');
+  const uninstallBtn = document.getElementById('serviceUninstallBtn');
+  statusDiv.textContent = 'Checking service status...';
+  installBtn.disabled = true;
+  uninstallBtn.disabled = true;
+  try {
+    const status = await window.pm2Api.getServiceStatus();
+    if (status.installed) {
+      statusDiv.innerHTML = `<span class='text-success'>PM2 is installed as a Windows service.</span>`;
+      installBtn.style.display = 'none';
+      uninstallBtn.style.display = '';
+      uninstallBtn.disabled = false;
+    } else {
+      statusDiv.innerHTML = `<span class='text-danger'>PM2 is NOT installed as a Windows service.</span>`;
+      installBtn.style.display = '';
+      uninstallBtn.style.display = 'none';
+      installBtn.disabled = false;
     }
+  } catch (e) {
+    statusDiv.innerHTML = `<span class='text-danger'>Error: ${e.message}</span>`;
+  }
+  modal.show();
+};
+
+document.getElementById('serviceInstallBtn').onclick = async function () {
+  this.disabled = true;
+  try {
+    await window.pm2Api.installService();
+    showToast('PM2 installed as a Windows service!', 'success');
+    window.showServiceWizard();
+  } catch (e) {
+    showToast('Failed to install service: ' + e.message, 'danger');
+  }
+  this.disabled = false;
+};
+document.getElementById('serviceUninstallBtn').onclick = async function () {
+  this.disabled = true;
+  try {
+    await window.pm2Api.uninstallService();
+    showToast('PM2 service uninstalled.', 'success');
+    window.showServiceWizard();
+  } catch (e) {
+    showToast('Failed to uninstall service: ' + e.message, 'danger');
+  }
+  this.disabled = false;
+};
+
+// --- Process Dependency Visualization ---
+window.showDependencyGraph = async function () {
+  const modal = new bootstrap.Modal(document.getElementById('dependencyModal'));
+  const graphArea = document.getElementById('dependencyGraphArea');
+  graphArea.innerHTML = 'Loading...';
+  try {
+    const deps = await window.pm2Api.getDependencies(); // Should return [{name, dependsOn: [name, ...]}, ...]
+    // Simple tree/graph rendering (text-based fallback)
+    let html = '';
+    deps.forEach(proc => {
+      html += `<b>${proc.name}</b>`;
+      if (proc.dependsOn && proc.dependsOn.length) {
+        html += ' → ' + proc.dependsOn.map(d => `<span class='badge bg-secondary'>${d}</span>`).join(' ');
+      }
+      html += '<br>';
+    });
+    graphArea.innerHTML = html || '<em>No dependencies defined.</em>';
+  } catch (e) {
+    graphArea.innerHTML = 'Error loading dependencies.';
+  }
+  modal.show();
+};
+
+// --- Global Environment Variable Management ---
+window.showGlobalEnvModal = async function () {
+  const modal = new bootstrap.Modal(document.getElementById('globalEnvModal'));
+  const area = document.getElementById('globalEnvArea');
+  area.value = 'Loading...';
+  try {
+    const env = await window.pm2Api.getGlobalEnv();
+    area.value = Object.entries(env).map(([k, v]) => `${k}=${v}`).join('\n');
+  } catch (e) {
+    area.value = 'Error loading global env.';
+  }
+  modal.show();
+};
+document.getElementById('globalEnvSaveBtn').onclick = async function () {
+  const area = document.getElementById('globalEnvArea');
+  const envRaw = area.value.trim();
+  const env = {};
+  envRaw.split('\n').forEach(line => {
+    const [k, v] = line.split('=');
+    if (k && v !== undefined) env[k.trim()] = v.trim();
+  });
+  try {
+    await window.pm2Api.setGlobalEnv(env);
+    showToast('Global environment updated!', 'success');
+  } catch (e) {
+    showToast('Failed to update global env: ' + e.message, 'danger');
+  }
+};
+document.getElementById('globalEnvImportBtn').onclick = function () {
+  document.getElementById('globalEnvFile').click();
+};
+document.getElementById('globalEnvFile').onchange = function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (evt) {
+    document.getElementById('globalEnvArea').value = evt.target.result;
   };
-}
-if (maxBtn) {
-  maxBtn.onclick = () => {
-    if (window.windowControls && window.windowControls.maximize) {
-      window.windowControls.maximize();
+  reader.readAsText(file);
+};
+document.getElementById('globalEnvExportBtn').onclick = function () {
+  const area = document.getElementById('globalEnvArea');
+  const blob = new Blob([area.value], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'global.env';
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// --- Process History Modal ---
+window.showProcessHistory = async function (id) {
+  const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+  const area = document.getElementById('historyArea');
+  area.innerHTML = 'Loading...';
+  try {
+    const history = await window.pm2Api.getProcessHistory(id); // Should return array of {date, event, code}
+    if (!history || !history.length) {
+      area.innerHTML = '<em>No history found.</em>';
+    } else {
+      area.innerHTML = '<ul class="list-group">' +
+        history.map(h => `<li class="list-group-item bg-dark text-light">${h.date} - ${h.event} (code: ${h.code ?? '-'})</li>`).join('') +
+        '</ul>';
     }
-  };
-}
-if (closeBtn) {
-  closeBtn.onclick = () => {
-    if (window.windowControls && window.windowControls.close) {
-      window.windowControls.close();
-    }
-  };
-}
+  } catch (e) {
+    area.innerHTML = 'Error loading history.';
+  }
+  modal.show();
+};
 
 // --- FUTURE IDEAS ---
 // - Add bulk actions (multi-select processes)
