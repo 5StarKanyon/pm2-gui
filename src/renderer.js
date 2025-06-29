@@ -938,29 +938,42 @@ startProcModalEl.addEventListener('hidden.bs.modal', () => {
   showWizardStep(1);
 });
 
-// --- Window bar controls robust attachment ---
+// --- Window bar controls robust attachment with debug and fallback ---
 function attachWindowBarControls() {
   const minBtn = document.getElementById('minBtn');
   const maxBtn = document.getElementById('maxBtn');
   const closeBtn = document.getElementById('closeBtn');
-  if (window.windowControls) {
-    if (minBtn) {
-      minBtn.onclick = window.windowControls.minimize;
-    }
-    if (maxBtn) {
-      maxBtn.onclick = window.windowControls.maximize;
-    }
-    if (closeBtn) {
-      closeBtn.onclick = window.windowControls.close;
-    }
-    // For debugging
-    // console.log('Window controls attached');
-  } else {
-    // For debugging
-    // console.warn('windowControls not available');
+  if (minBtn) {
+    minBtn.onclick = () => {
+      console.log('Minimize button clicked');
+      if (window.windowControls && window.windowControls.minimize) {
+        window.windowControls.minimize();
+      } else {
+        alert('Minimize: windowControls not available');
+      }
+    };
+  }
+  if (maxBtn) {
+    maxBtn.onclick = () => {
+      console.log('Maximize button clicked');
+      if (window.windowControls && window.windowControls.maximize) {
+        window.windowControls.maximize();
+      } else {
+        alert('Maximize: windowControls not available');
+      }
+    };
+  }
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      console.log('Close button clicked');
+      if (window.windowControls && window.windowControls.close) {
+        window.windowControls.close();
+      } else {
+        alert('Close: windowControls not available');
+      }
+    };
   }
 }
-// Attach on DOMContentLoaded and again after 500ms in case of late contextBridge
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', attachWindowBarControls);
 } else {
