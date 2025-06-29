@@ -1,10 +1,19 @@
+<!-- index.html - Main UI for PM2 GUI Electron app
+
+  - Uses Bootstrap 5 for layout and modals
+  - Custom dark theme via embedded <style>
+  - All UI events handled in renderer.js
+  - If you add new features, keep markup semantic and accessible
+-->
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <title>PM2 GUI Manager</title>
+    <!-- Bootstrap 5 for modern UI -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+      /* --- DARK THEME & LAYOUT --- */
       html, body {
         height: 100%;
         width: 100vw;
@@ -19,6 +28,7 @@
         display: flex;
         flex-direction: column;
       }
+      /* Custom window bar for Electron frameless window */
       .window-bar {
         height: 36px;
         background: #23272b;
@@ -176,7 +186,7 @@
     </style>
   </head>
   <body>
-    <!-- Custom draggable window bar -->
+    <!-- Custom draggable window bar for Electron frameless window -->
     <div class="window-bar">
       <button class="window-btn" id="minBtn" title="Minimize">&#8211;</button>
       <button class="window-btn" id="maxBtn" title="Maximize">&#9723;</button>
@@ -189,14 +199,13 @@
           <button class="btn btn-primary" id="refreshBtn">Refresh List</button>
           <button class="btn btn-success" id="startBtn">Start New Process</button>
         </div>
-
-        <!-- Search/filter bar -->
+        <!-- Search/filter bar for process table -->
         <div class="mb-3 row">
           <div class="col-md-6">
             <input type="text" class="form-control" id="searchInput" placeholder="Search by name or status..." />
           </div>
         </div>
-
+        <!-- Main process table -->
         <table class="table table-bordered table-hover pm2-table">
           <thead class="table-light">
             <tr>
@@ -212,6 +221,7 @@
             <!-- PM2 process rows go here -->
           </tbody>
         </table>
+        <!-- Logs and config panels -->
         <div class="logs-config-row">
           <div class="logs-col">
             <h5>Logs</h5>
@@ -224,8 +234,7 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal for process details -->
+    <!-- Modal for process details (view/edit config, live logs) -->
     <div class="modal fade" id="procModal" tabindex="-1" aria-labelledby="procModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -247,7 +256,6 @@
         </div>
       </div>
     </div>
-
     <!-- Modal for starting a new process -->
     <div class="modal fade" id="startProcModal" tabindex="-1" aria-labelledby="startProcModalLabel" aria-hidden="true">
       <div class="modal-dialog">
@@ -283,8 +291,7 @@
         </div>
       </div>
     </div>
-
-    <!-- Live Log Streaming Modal -->
+    <!-- Live Log Streaming Modal (efficient tailing) -->
     <div class="modal fade" id="liveLogModal" tabindex="-1" aria-labelledby="liveLogModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -302,13 +309,20 @@
         </div>
       </div>
     </div>
-
-    <!-- Toast notification container -->
+    <!-- Toast notification container (bottom right) -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
       <div id="toastContainer"></div>
     </div>
-
+    <!-- Bootstrap and renderer logic -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>
+<!--
+  FUTURE IDEAS:
+  - Add settings modal for user preferences
+  - Add log search/filter UI
+  - Add process grouping/sorting
+  - Add system tray integration
+  - Add light theme toggle
+-->

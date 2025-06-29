@@ -1,3 +1,9 @@
+// index.js - Main Electron process for PM2 GUI
+//
+// Handles window creation, secure IPC, and all backend logic for PM2 process management.
+//
+// NOTE: Keep all Node.js/PM2 logic here. Only expose safe APIs to renderer via preload.js.
+
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 const pm2 = require('pm2');
@@ -7,8 +13,8 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+// Create the main browser window (frameless, dark themed)
 const createWindow = () => {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -16,25 +22,16 @@ const createWindow = () => {
     titleBarStyle: 'hidden', // Hide the native title bar
     backgroundColor: '#181a1b', // Dark background
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.js'), // Secure contextBridge
     },
   });
-
-  // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
-
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools(); // Uncomment for debugging
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+// App ready: create window, handle macOS dock behavior
 app.whenReady().then(() => {
   createWindow();
-
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -42,15 +39,14 @@ app.whenReady().then(() => {
   });
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Quit when all windows are closed, except on macOS
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
+// --- PM2 IPC HANDLERS ---
 // Helper to promisify pm2 methods
 function pm2Promise(method, ...args) {
   return new Promise((resolve, reject) => {
@@ -60,8 +56,7 @@ function pm2Promise(method, ...args) {
     });
   });
 }
-
-// Connect to PM2 before handling requests
+// Ensure PM2 is connected before any action
 function ensurePM2Connected() {
   return new Promise((resolve, reject) => {
     pm2.connect(err => {
@@ -71,26 +66,32 @@ function ensurePM2Connected() {
   });
 }
 
+// List all PM2 processes
 ipcMain.handle('pm2-list', async () => {
   await ensurePM2Connected();
   return pm2Promise('list');
 });
+// Start a new process
 ipcMain.handle('pm2-start', async (event, script, options) => {
   await ensurePM2Connected();
   return pm2Promise('start', script, options || {});
 });
+// Stop a process
 ipcMain.handle('pm2-stop', async (event, id) => {
   await ensurePM2Connected();
   return pm2Promise('stop', id);
 });
+// Restart a process
 ipcMain.handle('pm2-restart', async (event, id) => {
   await ensurePM2Connected();
   return pm2Promise('restart', id);
 });
+// Delete a process
 ipcMain.handle('pm2-delete', async (event, id) => {
   await ensurePM2Connected();
   return pm2Promise('delete', id);
 });
+// Efficient log tailing: returns last N lines or new lines after offset
 ipcMain.handle('pm2-logs', async (event, arg) => {
   await ensurePM2Connected();
   // arg can be id (number) or {id, offset, lines}
@@ -108,18 +109,17 @@ ipcMain.handle('pm2-logs', async (event, arg) => {
     const logPath = proc[0].pm2_env.pm_out_log_path;
     try {
       const stats = fs.statSync(logPath);
-      let start = 0;
       let log = '';
       let newOffset = stats.size;
       if (offset && offset < stats.size) {
-        // Read new data since offset
+        // Read new data since offset (for live tailing)
         const fd = fs.openSync(logPath, 'r');
         const buf = Buffer.alloc(stats.size - offset);
         fs.readSync(fd, buf, 0, stats.size - offset, offset);
         fs.closeSync(fd);
         log = buf.toString();
       } else {
-        // Tail last N lines
+        // Tail last N lines (default 200), max 64KB
         const fd = fs.openSync(logPath, 'r');
         const chunkSize = Math.min(64 * 1024, stats.size); // Read last 64KB max
         const buf = Buffer.alloc(chunkSize);
@@ -135,17 +135,19 @@ ipcMain.handle('pm2-logs', async (event, arg) => {
     }
   });
 });
+// Get process config (env)
 ipcMain.handle('pm2-get-config', async (event, id) => {
   await ensurePM2Connected();
   return pm2Promise('describe', id).then(proc => proc[0]?.pm2_env || {});
 });
+// Set process config (not supported by PM2, placeholder)
 ipcMain.handle('pm2-set-config', async (event, id, config) => {
   await ensurePM2Connected();
   // PM2 does not support direct config editing; this is a placeholder
   return { success: false, message: 'Direct config editing not supported via API.' };
 });
 
-// Custom window bar actions
+// --- Window bar actions (minimize, maximize, close) ---
 ipcMain.on('window-minimize', () => {
   const win = BrowserWindow.getFocusedWindow();
   if (win) win.minimize();
@@ -158,3 +160,10 @@ ipcMain.on('window-close', () => {
   const win = BrowserWindow.getFocusedWindow();
   if (win) win.close();
 });
+
+// --- FUTURE IDEAS ---
+// - Add log rotation support
+// - Add PM2 config file editing
+// - Add system tray integration
+// - Add app auto-update support
+// - Add error reporting/logging

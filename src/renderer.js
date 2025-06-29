@@ -1,11 +1,17 @@
 // renderer.js - Handles UI and PM2 API interaction
+//
+// Main frontend logic for the PM2 GUI app. Handles all UI events, IPC calls to main process, and live updates.
+//
+// NOTE: If you add new features, keep UI responsive and all IPC calls secure via preload.js contextBridge.
 
-let logInterval = null;
-let liveLogInterval = null;
-let liveLogPaused = false;
+let logInterval = null; // For process modal live logs
+let liveLogInterval = null; // For main live log modal
+let liveLogPaused = false; // Pause state for live log modal
 
 // Toast notification utility
+// Shows a Bootstrap toast in the bottom right for user feedback
 function showToast(message, type = 'info') {
+  // Could extend to support more types or durations
   const toastId = 'toast' + Date.now();
   const toast = document.createElement('div');
   toast.className = `toast align-items-center text-bg-${type} border-0 show mb-2`;
@@ -23,12 +29,13 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-// Search/filter logic
+// --- Search/filter logic for process table ---
 let processListCache = [];
 document.getElementById('searchInput').addEventListener('input', function() {
   renderProcessTable();
 });
 
+// Loads all PM2 processes and updates the table
 async function loadProcesses() {
   const table = document.getElementById('pm2TableBody');
   table.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
@@ -40,6 +47,7 @@ async function loadProcesses() {
   }
 }
 
+// Returns a badge for process type (module, cluster, fork)
 function getTypeBadge(env) {
   if (env.axm_options && env.axm_options.isModule) {
     return '<span class="badge bg-info ms-2">Module</span>';
@@ -53,6 +61,7 @@ function getTypeBadge(env) {
   return '';
 }
 
+// Renders the process table, filtered by search
 function renderProcessTable() {
   const table = document.getElementById('pm2TableBody');
   const search = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -71,6 +80,7 @@ function renderProcessTable() {
   for (const proc of filtered) {
     const env = proc.pm2_env;
     const row = document.createElement('tr');
+    // Add a Live Log button for each process
     row.innerHTML = `
       <td><a href="#" onclick="showProcessModal(${proc.pm_id})">${env.name}</a> ${getTypeBadge(env)}</td>
       <td>${env.status}</td>
@@ -90,10 +100,12 @@ function renderProcessTable() {
   }
 }
 
+// Show logs for a process in the main logs area (not modal)
 async function showLogs(id) {
   const logsArea = document.getElementById('logsArea');
   logsArea.textContent = 'Loading logs...';
   try {
+    // Use new log tailing API, only last 200 lines
     const result = await window.pm2Api.logs({ id, lines: 200 });
     if (result && typeof result === 'object') {
       logsArea.textContent = result.log || 'No logs found.';
@@ -105,6 +117,7 @@ async function showLogs(id) {
   }
 }
 
+// Show config for a process in the main config area
 async function showConfig(id) {
   const configArea = document.getElementById('configArea');
   configArea.textContent = 'Loading config...';
@@ -116,6 +129,7 @@ async function showConfig(id) {
   }
 }
 
+// Restart a process and reload table
 async function restartProc(id) {
   try {
     await window.pm2Api.restart(id);
@@ -125,6 +139,7 @@ async function restartProc(id) {
     showToast('Failed to restart: ' + e.message, 'danger');
   }
 }
+// Stop a process and reload table
 async function stopProc(id) {
   try {
     await window.pm2Api.stop(id);
@@ -134,6 +149,7 @@ async function stopProc(id) {
     showToast('Failed to stop: ' + e.message, 'danger');
   }
 }
+// Delete a process and reload table
 async function deleteProc(id) {
   try {
     await window.pm2Api.delete(id);
@@ -144,10 +160,11 @@ async function deleteProc(id) {
   }
 }
 
+// --- UI event hooks ---
 document.getElementById('refreshBtn').onclick = loadProcesses;
 window.onload = loadProcesses;
 
-// Start new process (simple prompt for now)
+// Start new process (simple prompt for now, replaced by modal below)
 document.getElementById('startBtn').onclick = async () => {
   const script = prompt('Enter the script path to start with PM2:');
   if (script) {
@@ -156,6 +173,7 @@ document.getElementById('startBtn').onclick = async () => {
   }
 };
 
+// Show process details modal, including live logs and config
 window.showProcessModal = async function(id) {
   const modal = new bootstrap.Modal(document.getElementById('procModal'));
   document.getElementById('procDetails').textContent = 'Loading...';
@@ -176,20 +194,21 @@ window.showProcessModal = async function(id) {
     `;
   }
 
-  // Live log streaming
+  // Live log streaming for process modal (not main modal)
   if (logInterval) clearInterval(logInterval);
   async function updateLogs() {
+    // Note: This is not optimized for huge logs, could be improved like main modal
     const logs = await window.pm2Api.logs(id);
     document.getElementById('liveLogsArea').textContent = logs || 'No logs.';
   }
   await updateLogs();
   logInterval = setInterval(updateLogs, 2000);
 
-  // Load config
+  // Load config for process
   const config = await window.pm2Api.getConfig(id);
   document.getElementById('modalConfigArea').value = JSON.stringify(config, null, 2);
 
-  // Save config handler
+  // Save config handler (currently a placeholder, as PM2 doesn't support direct config editing)
   document.getElementById('saveConfigBtn').onclick = async () => {
     try {
       const newConfig = JSON.parse(document.getElementById('modalConfigArea').value);
@@ -205,13 +224,14 @@ window.showProcessModal = async function(id) {
     }
   };
 
-  // Show modal
+  // Show modal and clear interval on close
   modal.show();
   document.getElementById('procModal').addEventListener('hidden.bs.modal', () => {
     if (logInterval) clearInterval(logInterval);
   }, { once: true });
 };
 
+// --- Live log modal (main tailing, efficient for large logs) ---
 window.showLiveLogModal = function(id, name) {
   const modal = new bootstrap.Modal(document.getElementById('liveLogModal'));
   const area = document.getElementById('liveLogModalArea');
@@ -221,16 +241,18 @@ window.showLiveLogModal = function(id, name) {
   document.getElementById('pauseLogBtn').disabled = false;
   document.getElementById('resumeLogBtn').disabled = true;
 
-  let logOffset = 0;
+  let logOffset = 0; // Track byte offset for efficient tailing
   let initial = true;
 
   async function updateLiveLog() {
     if (liveLogPaused) return;
     let result;
     if (initial) {
+      // On open, fetch only last 200 lines
       result = await window.pm2Api.logs({ id, lines: 200 });
       initial = false;
     } else {
+      // On poll, fetch only new lines after last offset
       result = await window.pm2Api.logs({ id, offset: logOffset });
     }
     if (result && typeof result === 'object') {
@@ -247,6 +269,7 @@ window.showLiveLogModal = function(id, name) {
   liveLogInterval && clearInterval(liveLogInterval);
   liveLogInterval = setInterval(updateLiveLog, 1500);
 
+  // Pause/resume controls for live log modal
   document.getElementById('pauseLogBtn').onclick = () => {
     liveLogPaused = true;
     document.getElementById('pauseLogBtn').disabled = true;
@@ -264,7 +287,7 @@ window.showLiveLogModal = function(id, name) {
   modal.show();
 };
 
-// Advanced Start Process Modal
+// --- Advanced Start Process Modal ---
 const startBtn = document.getElementById('startBtn');
 const startProcModal = new bootstrap.Modal(document.getElementById('startProcModal'));
 startBtn.onclick = () => {
@@ -273,6 +296,7 @@ startBtn.onclick = () => {
 };
 
 document.getElementById('startProcSubmit').onclick = async () => {
+  // Gather form values for new process
   const script = document.getElementById('startScript').value.trim();
   const name = document.getElementById('startName').value.trim();
   const args = document.getElementById('startArgs').value.trim();
@@ -300,6 +324,7 @@ document.getElementById('startProcSubmit').onclick = async () => {
   }
 };
 
+// --- Window bar controls ---
 window.addEventListener('DOMContentLoaded', () => {
   // Attach window control button listeners after DOM is loaded
   const minBtn = document.getElementById('minBtn');
@@ -311,3 +336,12 @@ window.addEventListener('DOMContentLoaded', () => {
     if (closeBtn) closeBtn.onclick = window.windowControls.close;
   }
 });
+
+// --- FUTURE IDEAS ---
+// - Add bulk actions (multi-select processes)
+// - Add log search/filter in modal
+// - Add process grouping/sorting
+// - Add settings modal for user preferences
+// - Add system tray integration
+// - Add light theme toggle
+// - Add more advanced config editing UI
