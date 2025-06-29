@@ -8,24 +8,44 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-// PM2 API: all process management actions
-contextBridge.exposeInMainWorld('pm2Api', {
-  list: () => ipcRenderer.invoke('pm2-list'),
-  start: (script, options) => ipcRenderer.invoke('pm2-start', script, options),
-  stop: (id) => ipcRenderer.invoke('pm2-stop', id),
-  restart: (id) => ipcRenderer.invoke('pm2-restart', id),
-  delete: (id) => ipcRenderer.invoke('pm2-delete', id),
-  logs: (id) => ipcRenderer.invoke('pm2-logs', id), // Accepts id or {id, offset, lines}
-  getConfig: (id) => ipcRenderer.invoke('pm2-get-config', id),
-  setConfig: (id, config) => ipcRenderer.invoke('pm2-set-config', id, config),
-});
+// Defensive: Ensure contextBridge and ipcRenderer are available
+if (contextBridge && ipcRenderer) {
+  // PM2 API: all process management actions
+  contextBridge.exposeInMainWorld('pm2Api', {
+    list: () => ipcRenderer.invoke('pm2-list'),
+    start: (script, options) => ipcRenderer.invoke('pm2-start', script, options),
+    stop: (id) => ipcRenderer.invoke('pm2-stop', id),
+    restart: (id) => ipcRenderer.invoke('pm2-restart', id),
+    delete: (id) => ipcRenderer.invoke('pm2-delete', id),
+    logs: (id) => ipcRenderer.invoke('pm2-logs', id), // Accepts id or {id, offset, lines}
+    getConfig: (id) => ipcRenderer.invoke('pm2-get-config', id),
+    setConfig: (id, config) => ipcRenderer.invoke('pm2-set-config', id, config),
+  });
 
-// Window controls for custom title bar
-contextBridge.exposeInMainWorld('windowControls', {
-  minimize: () => ipcRenderer.send('window-minimize'),
-  maximize: () => ipcRenderer.send('window-maximize'),
-  close: () => ipcRenderer.send('window-close'),
-});
+  // Window controls for custom title bar
+  contextBridge.exposeInMainWorld('windowControls', {
+    minimize: () => ipcRenderer.send('window-minimize'),
+    maximize: () => ipcRenderer.send('window-maximize'),
+    close: () => ipcRenderer.send('window-close'),
+  });
+} else {
+  // Fallback: Expose no-ops to prevent renderer errors
+  window.pm2Api = {
+    list: async () => [],
+    start: async () => {},
+    stop: async () => {},
+    restart: async () => {},
+    delete: async () => {},
+    logs: async () => ({}),
+    getConfig: async () => ({}),
+    setConfig: async () => ({}),
+  };
+  window.windowControls = {
+    minimize: () => {},
+    maximize: () => {},
+    close: () => {},
+  };
+}
 
 // --- FUTURE IDEAS ---
 // - Add more granular PM2 APIs (logs for err, out, etc)
