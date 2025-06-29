@@ -4,8 +4,9 @@
 //
 // NOTE: Keep all Node.js/PM2 logic here. Only expose safe APIs to renderer via preload.js.
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { Buffer } = require('buffer'); // Fix: Ensure Buffer is defined for Node.js
 const path = require('node:path');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const pm2 = require('pm2');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -30,6 +31,7 @@ const createWindow = () => {
 };
 
 // App ready: create window, handle macOS dock behavior
+
 app.whenReady().then(() => {
   createWindow();
   app.on('activate', () => {
@@ -37,6 +39,7 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+  return null; // ESLint: then() should return a value
 });
 
 // Quit when all windows are closed, except on macOS
@@ -51,17 +54,23 @@ app.on('window-all-closed', () => {
 function pm2Promise(method, ...args) {
   return new Promise((resolve, reject) => {
     pm2[method](...args, (err, result) => {
-      if (err) reject(err);
-      else resolve(result);
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
     });
   });
 }
 // Ensure PM2 is connected before any action
 function ensurePM2Connected() {
   return new Promise((resolve, reject) => {
-    pm2.connect(err => {
-      if (err && err.message !== 'PM2 is already connected') reject(err);
-      else resolve();
+    pm2.connect((err) => {
+      if (err && err.message !== 'PM2 is already connected') {
+        reject(err);
+      } else {
+        resolve();
+      }
     });
   });
 }
@@ -95,7 +104,9 @@ ipcMain.handle('pm2-delete', async (event, id) => {
 ipcMain.handle('pm2-logs', async (event, arg) => {
   await ensurePM2Connected();
   // arg can be id (number) or {id, offset, lines}
-  let id, offset = 0, lines = 200;
+  let id,
+    offset = 0,
+    lines = 200;
   if (typeof arg === 'object' && arg !== null) {
     id = arg.id;
     offset = arg.offset || 0;
@@ -103,8 +114,10 @@ ipcMain.handle('pm2-logs', async (event, arg) => {
   } else {
     id = arg;
   }
-  return pm2Promise('describe', id).then(proc => {
-    if (!proc[0] || !proc[0].pm2_env || !proc[0].pm2_env.pm_out_log_path) return { log: '', newOffset: 0 };
+  return pm2Promise('describe', id).then((proc) => {
+    if (!proc[0] || !proc[0].pm2_env || !proc[0].pm2_env.pm_out_log_path) {
+      return { log: '', newOffset: 0 };
+    }
     const fs = require('fs');
     const logPath = proc[0].pm2_env.pm_out_log_path;
     try {
@@ -138,9 +151,10 @@ ipcMain.handle('pm2-logs', async (event, arg) => {
 // Get process config (env)
 ipcMain.handle('pm2-get-config', async (event, id) => {
   await ensurePM2Connected();
-  return pm2Promise('describe', id).then(proc => proc[0]?.pm2_env || {});
+  return pm2Promise('describe', id).then((proc) => proc[0]?.pm2_env || {});
 });
 // Set process config (not supported by PM2, placeholder)
+// eslint-disable-next-line no-unused-vars
 ipcMain.handle('pm2-set-config', async (event, id, config) => {
   await ensurePM2Connected();
   // PM2 does not support direct config editing; this is a placeholder
@@ -150,15 +164,21 @@ ipcMain.handle('pm2-set-config', async (event, id, config) => {
 // --- Window bar actions (minimize, maximize, close) ---
 ipcMain.on('window-minimize', () => {
   const win = BrowserWindow.getFocusedWindow();
-  if (win) win.minimize();
+  if (win) {
+    win.minimize();
+  }
 });
 ipcMain.on('window-maximize', () => {
   const win = BrowserWindow.getFocusedWindow();
-  if (win) win.isMaximized() ? win.unmaximize() : win.maximize();
+  if (win) {
+    win.isMaximized() ? win.unmaximize() : win.maximize();
+  }
 });
 ipcMain.on('window-close', () => {
   const win = BrowserWindow.getFocusedWindow();
-  if (win) win.close();
+  if (win) {
+    win.close();
+  }
 });
 
 // --- FUTURE IDEAS ---

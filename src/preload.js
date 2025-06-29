@@ -17,14 +17,14 @@ contextBridge.exposeInMainWorld('pm2Api', {
   delete: (id) => ipcRenderer.invoke('pm2-delete', id),
   logs: (id) => ipcRenderer.invoke('pm2-logs', id), // Accepts id or {id, offset, lines}
   getConfig: (id) => ipcRenderer.invoke('pm2-get-config', id),
-  setConfig: (id, config) => ipcRenderer.invoke('pm2-set-config', id, config)
+  setConfig: (id, config) => ipcRenderer.invoke('pm2-set-config', id, config),
 });
 
 // Window controls for custom title bar
 contextBridge.exposeInMainWorld('windowControls', {
   minimize: () => ipcRenderer.send('window-minimize'),
   maximize: () => ipcRenderer.send('window-maximize'),
-  close: () => ipcRenderer.send('window-close')
+  close: () => ipcRenderer.send('window-close'),
 });
 
 // --- FUTURE IDEAS ---

@@ -5,16 +5,20 @@
   - All UI events handled in renderer.js
   - If you add new features, keep markup semantic and accessible
 -->
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <title>PM2 GUI Manager</title>
     <!-- Bootstrap 5 for modern UI -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <style>
       /* --- DARK THEME & LAYOUT --- */
-      html, body {
+      html,
+      body {
         height: 100%;
         width: 100vw;
         margin: 0;
@@ -59,7 +63,9 @@
         -webkit-app-region: no-drag;
         transition: background 0.2s;
       }
-      .window-btn:hover { background: #666; }
+      .window-btn:hover {
+        background: #666;
+      }
       .main-content {
         flex: 1 1 0;
         display: flex;
@@ -80,12 +86,17 @@
         width: 100%;
         max-width: 1200px;
         margin: 0 auto;
-        box-shadow: 0 0 0 2px #333, 0 8px 32px #000a;
+        box-shadow:
+          0 0 0 2px #333,
+          0 8px 32px #000a;
         border-radius: 0 0 16px 16px;
         background: #181a1b;
         padding: 2rem 2rem 1rem 2rem;
       }
-      .pm2-table th, .pm2-table td { vertical-align: middle; }
+      .pm2-table th,
+      .pm2-table td {
+        vertical-align: middle;
+      }
       .logs-config-row {
         flex: 1 1 0;
         display: flex;
@@ -93,7 +104,8 @@
         min-height: 0;
         margin-top: 1.5rem;
       }
-      .logs-col, .config-col {
+      .logs-col,
+      .config-col {
         flex: 1 1 0;
         display: flex;
         flex-direction: column;
@@ -119,7 +131,8 @@
         border: 1px solid #222;
         box-shadow: 0 4px 32px #000a;
       }
-      .modal-header, .modal-footer {
+      .modal-header,
+      .modal-footer {
         background: #1a1d20;
         color: #f8f9fa;
         border-bottom: 1px solid #222;
@@ -131,10 +144,18 @@
         border-bottom-left-radius: 12px;
         border-bottom-right-radius: 12px;
       }
-      .modal-title, .modal-body label, .modal-body, .modal-body h5, .modal-body h6 {
+      .modal-title,
+      .modal-body label,
+      .modal-body,
+      .modal-body h5,
+      .modal-body h6 {
         color: #f8f9fa;
       }
-      .form-control, .form-select, textarea, input[type="text"], input[type="number"] {
+      .form-control,
+      .form-select,
+      textarea,
+      input[type='text'],
+      input[type='number'] {
         background: #23272b !important;
         color: #f8f9fa !important;
         border: 1px solid #444 !important;
@@ -144,7 +165,11 @@
         color: #b0b4b9 !important;
         opacity: 1;
       }
-      .form-control:focus, .form-select:focus, textarea:focus, input[type="text"]:focus, input[type="number"]:focus {
+      .form-control:focus,
+      .form-select:focus,
+      textarea:focus,
+      input[type='text']:focus,
+      input[type='number']:focus {
         background: #23272b !important;
         color: #fff !important;
         border-color: #4e8cff !important;
@@ -158,7 +183,8 @@
         border: 1px solid #222;
         overflow: hidden;
       }
-      .pm2-table th, .pm2-table td {
+      .pm2-table th,
+      .pm2-table td {
         background: #23272b;
         color: #f8f9fa;
         border-color: #333;
@@ -175,13 +201,19 @@
       .pm2-table tbody tr:hover {
         background: #292d31;
       }
-      .pm2-table td, .pm2-table th {
+      .pm2-table td,
+      .pm2-table th {
         border: 1px solid #333;
       }
       /* --- END DARK TABLE --- */
       @media (max-width: 900px) {
-        .pm2-container { padding: 1rem 0.5rem; }
-        .logs-config-row { flex-direction: column; gap: 1rem; }
+        .pm2-container {
+          padding: 1rem 0.5rem;
+        }
+        .logs-config-row {
+          flex-direction: column;
+          gap: 1rem;
+        }
       }
     </style>
   </head>
@@ -202,18 +234,33 @@
         <!-- Search/filter bar for process table -->
         <div class="mb-3 row">
           <div class="col-md-6">
-            <input type="text" class="form-control" id="searchInput" placeholder="Search by name or status..." />
+            <input
+              type="text"
+              class="form-control"
+              id="searchInput"
+              placeholder="Search by name or status..."
+            />
           </div>
         </div>
         <!-- Main process table -->
         <table class="table table-bordered table-hover pm2-table">
           <thead class="table-light">
             <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>PID</th>
-              <th>CPU</th>
-              <th>Memory</th>
+              <th style="cursor: pointer" onclick="sortTable('name')">
+                Name <span id="sortIcon-name"></span>
+              </th>
+              <th style="cursor: pointer" onclick="sortTable('status')">
+                Status <span id="sortIcon-status"></span>
+              </th>
+              <th style="cursor: pointer" onclick="sortTable('pid')">
+                PID <span id="sortIcon-pid"></span>
+              </th>
+              <th style="cursor: pointer" onclick="sortTable('cpu')">
+                CPU <span id="sortIcon-cpu"></span>
+              </th>
+              <th style="cursor: pointer" onclick="sortTable('memory')">
+                Memory <span id="sortIcon-memory"></span>
+              </th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -225,6 +272,14 @@
         <div class="logs-config-row">
           <div class="logs-col">
             <h5>Logs</h5>
+            <!-- Log search input -->
+            <input
+              id="mainLogSearch"
+              type="text"
+              class="form-control mb-2"
+              placeholder="Search logs..."
+              oninput="handleMainLogSearch()"
+            />
             <div class="logs-area" id="logsArea">Select a process to view logs.</div>
           </div>
           <div class="config-col">
@@ -235,76 +290,280 @@
       </div>
     </div>
     <!-- Modal for process details (view/edit config, live logs) -->
-    <div class="modal fade" id="procModal" tabindex="-1" aria-labelledby="procModalLabel" aria-hidden="true">
+    <div
+      class="modal fade"
+      id="procModal"
+      tabindex="-1"
+      aria-labelledby="procModalLabel"
+      aria-hidden="true"
+    >
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="procModalLabel">Process Details</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="modal-body">
             <div id="procDetails"></div>
             <h6 class="mt-3">Live Logs</h6>
+            <!-- Modal log search input -->
+            <input
+              id="modalLogSearch"
+              type="text"
+              class="form-control mb-2"
+              placeholder="Search logs..."
+              oninput="handleModalLogSearch()"
+            />
             <div class="logs-area" id="liveLogsArea">Loading...</div>
             <h6 class="mt-3">Config</h6>
-            <textarea class="form-control" id="modalConfigArea" rows="8"></textarea>
+            <!-- Config editor tabs -->
+            <ul class="nav nav-tabs mb-2" id="configTab" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link active"
+                  id="config-form-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#configFormTab"
+                  type="button"
+                  role="tab"
+                  aria-controls="configFormTab"
+                  aria-selected="true"
+                >
+                  Form
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  id="config-json-tab"
+                  data-bs-toggle="tab"
+                  data-bs-target="#configJsonTab"
+                  type="button"
+                  role="tab"
+                  aria-controls="configJsonTab"
+                  aria-selected="false"
+                >
+                  JSON
+                </button>
+              </li>
+            </ul>
+            <div class="tab-content" id="configTabContent">
+              <div
+                class="tab-pane fade show active"
+                id="configFormTab"
+                role="tabpanel"
+                aria-labelledby="config-form-tab"
+              >
+                <form id="configForm">
+                  <div class="mb-2">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-control" id="configName" />
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label">Script Path</label>
+                    <input type="text" class="form-control" id="configScript" />
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label">Arguments (space separated)</label>
+                    <input type="text" class="form-control" id="configArgs" />
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label"
+                      >Environment Variables (key=value, one per line)</label
+                    >
+                    <textarea class="form-control" id="configEnv" rows="2"></textarea>
+                  </div>
+                  <div
+                    id="configFormError"
+                    class="text-danger small mb-2"
+                    style="display: none"
+                  ></div>
+                </form>
+              </div>
+              <div
+                class="tab-pane fade"
+                id="configJsonTab"
+                role="tabpanel"
+                aria-labelledby="config-json-tab"
+              >
+                <textarea class="form-control" id="modalConfigArea" rows="8"></textarea>
+                <div
+                  id="configJsonError"
+                  class="text-danger small mt-1"
+                  style="display: none"
+                ></div>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary" id="saveConfigBtn">Save Config & Restart</button>
+            <button type="button" class="btn btn-primary" id="saveConfigBtn">
+              Save Config & Restart
+            </button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
     </div>
-    <!-- Modal for starting a new process -->
-    <div class="modal fade" id="startProcModal" tabindex="-1" aria-labelledby="startProcModalLabel" aria-hidden="true">
+    <!-- Modal for starting a new process (Wizard) -->
+    <div
+      class="modal fade"
+      id="startProcModal"
+      tabindex="-1"
+      aria-labelledby="startProcModalLabel"
+      aria-hidden="true"
+    >
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="startProcModalLabel">Start New PM2 Process</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="modal-body">
-            <form id="startProcForm">
-              <div class="mb-2">
-                <label class="form-label">Script Path</label>
-                <input type="text" class="form-control" id="startScript" required />
+            <form id="startProcWizardForm">
+              <div id="wizardStep1" class="wizard-step">
+                <h6>Step 1: Script Path</h6>
+                <input
+                  type="text"
+                  class="form-control mb-2"
+                  id="wizardScript"
+                  placeholder="Script path (required)"
+                  required
+                />
+                <div
+                  id="wizardStep1Error"
+                  class="text-danger small mb-2"
+                  style="display: none"
+                ></div>
+                <button type="button" class="btn btn-primary float-end" id="wizardNext1">
+                  Next &raquo;
+                </button>
               </div>
-              <div class="mb-2">
-                <label class="form-label">Process Name (optional)</label>
-                <input type="text" class="form-control" id="startName" />
+              <div id="wizardStep2" class="wizard-step" style="display: none">
+                <h6>Step 2: Name & Arguments</h6>
+                <input
+                  type="text"
+                  class="form-control mb-2"
+                  id="wizardName"
+                  placeholder="Process name (optional)"
+                />
+                <input
+                  type="text"
+                  class="form-control mb-2"
+                  id="wizardArgs"
+                  placeholder="Arguments (space separated, optional)"
+                />
+                <button type="button" class="btn btn-secondary" id="wizardBack2">
+                  &laquo; Back
+                </button>
+                <button type="button" class="btn btn-primary float-end" id="wizardNext2">
+                  Next &raquo;
+                </button>
               </div>
-              <div class="mb-2">
-                <label class="form-label">Arguments (space separated, optional)</label>
-                <input type="text" class="form-control" id="startArgs" />
+              <div id="wizardStep3" class="wizard-step" style="display: none">
+                <h6>Step 3: Environment Variables</h6>
+                <textarea
+                  class="form-control mb-2"
+                  id="wizardEnv"
+                  rows="3"
+                  placeholder="key=value, one per line (optional)"
+                ></textarea>
+                <button type="button" class="btn btn-secondary" id="wizardBack3">
+                  &laquo; Back
+                </button>
+                <button type="button" class="btn btn-primary float-end" id="wizardNext3">
+                  Next &raquo;
+                </button>
               </div>
-              <div class="mb-2">
-                <label class="form-label">Environment Variables (key=value, one per line, optional)</label>
-                <textarea class="form-control" id="startEnv" rows="3"></textarea>
+              <div id="wizardStep4" class="wizard-step" style="display: none">
+                <h6>Step 4: Review & Start</h6>
+                <pre class="bg-dark text-light p-2 rounded" id="wizardReview"></pre>
+                <div
+                  id="wizardStep4Error"
+                  class="text-danger small mb-2"
+                  style="display: none"
+                ></div>
+                <button type="button" class="btn btn-secondary" id="wizardBack4">
+                  &laquo; Back
+                </button>
+                <button type="button" class="btn btn-success float-end" id="wizardStartBtn">
+                  Start Process
+                </button>
               </div>
             </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" id="startProcSubmit">Start Process</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           </div>
         </div>
       </div>
     </div>
     <!-- Live Log Streaming Modal (efficient tailing) -->
-    <div class="modal fade" id="liveLogModal" tabindex="-1" aria-labelledby="liveLogModalLabel" aria-hidden="true">
+    <div
+      class="modal fade"
+      id="liveLogModal"
+      tabindex="-1"
+      aria-labelledby="liveLogModalLabel"
+      aria-hidden="true"
+    >
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="liveLogModalLabel">Live Logs</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="modal-body">
-            <div class="logs-area" id="liveLogModalArea" style="height: 350px;">Loading...</div>
+            <div class="logs-area" id="liveLogModalArea" style="height: 350px">Loading...</div>
             <div class="d-flex justify-content-end mt-2">
               <button class="btn btn-secondary btn-sm me-2" id="pauseLogBtn">Pause</button>
               <button class="btn btn-secondary btn-sm" id="resumeLogBtn">Resume</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Live Monitoring Modal -->
+    <div
+      class="modal fade"
+      id="monitorModal"
+      tabindex="-1"
+      aria-labelledby="monitorModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="monitorModalLabel">Live Resource Monitor</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <h6>CPU Usage (%)</h6>
+                <canvas id="cpuChart" height="180"></canvas>
+              </div>
+              <div class="col-md-6 mb-3">
+                <h6>Memory Usage (MB)</h6>
+                <canvas id="memChart" height="180"></canvas>
+              </div>
+            </div>
+            <div id="monitorStats" class="mt-2 text-light small"></div>
           </div>
         </div>
       </div>
@@ -315,6 +574,7 @@
     </div>
     <!-- Bootstrap and renderer logic -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>
