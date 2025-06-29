@@ -938,21 +938,35 @@ startProcModalEl.addEventListener('hidden.bs.modal', () => {
   showWizardStep(1);
 });
 
-// --- Window bar controls ---
-const minBtn = document.getElementById('minBtn');
-const maxBtn = document.getElementById('maxBtn');
-const closeBtn = document.getElementById('closeBtn');
-if (window.windowControls) {
-  if (minBtn) {
-    minBtn.onclick = window.windowControls.minimize;
-  }
-  if (maxBtn) {
-    maxBtn.onclick = window.windowControls.maximize;
-  }
-  if (closeBtn) {
-    closeBtn.onclick = window.windowControls.close;
+// --- Window bar controls robust attachment ---
+function attachWindowBarControls() {
+  const minBtn = document.getElementById('minBtn');
+  const maxBtn = document.getElementById('maxBtn');
+  const closeBtn = document.getElementById('closeBtn');
+  if (window.windowControls) {
+    if (minBtn) {
+      minBtn.onclick = window.windowControls.minimize;
+    }
+    if (maxBtn) {
+      maxBtn.onclick = window.windowControls.maximize;
+    }
+    if (closeBtn) {
+      closeBtn.onclick = window.windowControls.close;
+    }
+    // For debugging
+    // console.log('Window controls attached');
+  } else {
+    // For debugging
+    // console.warn('windowControls not available');
   }
 }
+// Attach on DOMContentLoaded and again after 500ms in case of late contextBridge
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', attachWindowBarControls);
+} else {
+  attachWindowBarControls();
+}
+setTimeout(attachWindowBarControls, 500);
 
 // --- FUTURE IDEAS ---
 // - Add bulk actions (multi-select processes)
