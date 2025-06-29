@@ -218,17 +218,21 @@
     </style>
   </head>
   <body>
-    <!-- Removed custom draggable window bar for Electron frameless window -->
-    <!-- <div class="window-bar"> ... </div> -->
+    <!-- Custom draggable window bar for Electron frameless window -->
+    <div class="window-bar">
+      <button class="window-btn" id="minBtn" title="Minimize">&#8211;</button>
+      <button class="window-btn" id="maxBtn" title="Maximize">&#9723;</button>
+      <button class="window-btn" id="closeBtn" title="Close">&#10005;</button>
+    </div>
     <div class="main-content">
       <div class="pm2-container">
         <h1 class="mb-4">PM2 Process Manager</h1>
         <div class="mb-3">
           <button class="btn btn-primary" id="refreshBtn">Refresh List</button>
           <button class="btn btn-success" id="startBtn">Start New Process</button>
-          <button class="btn btn-outline-info ms-2" onclick="showServiceWizard()">Windows Service Wizard</button>
-          <button class="btn btn-outline-secondary ms-2" onclick="showDependencyGraph()">Show Dependencies</button>
-          <button class="btn btn-outline-warning ms-2" onclick="showGlobalEnvModal()">Global Env Vars</button>
+          <button class="btn btn-outline-info" id="openScheduleRestartBtn">
+            Scheduled Restart
+          </button>
         </div>
         <!-- Search/filter bar for process table -->
         <div class="mb-3 row">
@@ -245,25 +249,11 @@
         <table class="table table-bordered table-hover pm2-table">
           <thead class="table-light">
             <tr>
-              <th></th>
-              <th style="cursor: pointer" onclick="sortTable('name')">
-                Name <span id="sortIcon-name"></span>
-              </th>
-              <th style="cursor: pointer" onclick="sortTable('status')">
-                Status <span id="sortIcon-status"></span>
-              </th>
-              <th style="cursor: pointer" onclick="sortTable('pid')">
-                PID <span id="sortIcon-pid"></span>
-              </th>
-              <th style="cursor: pointer" onclick="sortTable('cpu')">
-                CPU <span id="sortIcon-cpu"></span>
-              </th>
-              <th style="cursor: pointer" onclick="sortTable('memory')">
-                Memory <span id="sortIcon-memory"></span>
-              </th>
-              <th>Uptime</th>
-              <th>Restarts</th>
-              <th>Last Restart</th>
+              <th>Name</th>
+              <th>Status</th>
+              <th>PID</th>
+              <th>CPU</th>
+              <th>Memory</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -275,14 +265,6 @@
         <div class="logs-config-row">
           <div class="logs-col">
             <h5>Logs</h5>
-            <!-- Log search input -->
-            <input
-              id="mainLogSearch"
-              type="text"
-              class="form-control mb-2"
-              placeholder="Search logs..."
-              oninput="handleMainLogSearch()"
-            />
             <div class="logs-area" id="logsArea">Select a process to view logs.</div>
           </div>
           <div class="config-col">
@@ -314,94 +296,17 @@
           <div class="modal-body">
             <div id="procDetails"></div>
             <h6 class="mt-3">Live Logs</h6>
-            <!-- Modal log search input -->
-            <input
-              id="modalLogSearch"
-              type="text"
-              class="form-control mb-2"
-              placeholder="Search logs..."
-              oninput="handleModalLogSearch()"
-            />
             <div class="logs-area" id="liveLogsArea">Loading...</div>
             <h6 class="mt-3">Config</h6>
-            <!-- Config editor tabs -->
-            <ul class="nav nav-tabs mb-2" id="configTab" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button
-                  class="nav-link active"
-                  id="config-form-tab"
-                  data-bs-toggle="tab"
-                  data-bs-target="#configFormTab"
-                  type="button"
-                  role="tab"
-                  aria-controls="configFormTab"
-                  aria-selected="true"
-                >
-                  Form
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button
-                  class="nav-link"
-                  id="config-json-tab"
-                  data-bs-toggle="tab"
-                  data-bs-target="#configJsonTab"
-                  type="button"
-                  role="tab"
-                  aria-controls="configJsonTab"
-                  aria-selected="false"
-                >
-                  JSON
-                </button>
-              </li>
-            </ul>
-            <div class="tab-content" id="configTabContent">
-              <div
-                class="tab-pane fade show active"
-                id="configFormTab"
-                role="tabpanel"
-                aria-labelledby="config-form-tab"
-              >
-                <form id="configForm">
-                  <div class="mb-2">
-                    <label class="form-label">Name</label>
-                    <input type="text" class="form-control" id="configName" />
-                  </div>
-                  <div class="mb-2">
-                    <label class="form-label">Script Path</label>
-                    <input type="text" class="form-control" id="configScript" />
-                  </div>
-                  <div class="mb-2">
-                    <label class="form-label">Arguments (space separated)</label>
-                    <input type="text" class="form-control" id="configArgs" />
-                  </div>
-                  <div class="mb-2">
-                    <label class="form-label"
-                      >Environment Variables (key=value, one per line)</label
-                    >
-                    <textarea class="form-control" id="configEnv" rows="2"></textarea>
-                  </div>
-                  <div
-                    id="configFormError"
-                    class="text-danger small mb-2"
-                    style="display: none"
-                  ></div>
-                </form>
-              </div>
-              <div
-                class="tab-pane fade"
-                id="configJsonTab"
-                role="tabpanel"
-                aria-labelledby="config-json-tab"
-              >
-                <textarea class="form-control" id="modalConfigArea" rows="8"></textarea>
-                <div
-                  id="configJsonError"
-                  class="text-danger small mt-1"
-                  style="display: none"
-                ></div>
-              </div>
-            </div>
+            <textarea class="form-control" id="modalConfigArea" rows="8"></textarea>
+            <h6 class="mt-3">Environment Variables</h6>
+            <textarea
+              class="form-control"
+              id="modalEnvArea"
+              rows="5"
+              placeholder="KEY=VALUE, one per line"
+            ></textarea>
+            <button class="btn btn-primary mt-2" id="saveEnvBtn">Save Env & Restart</button>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-primary" id="saveConfigBtn">
@@ -412,7 +317,7 @@
         </div>
       </div>
     </div>
-    <!-- Modal for starting a new process (Wizard) -->
+    <!-- Modal for starting a new process -->
     <div
       class="modal fade"
       id="startProcModal"
@@ -432,77 +337,32 @@
             ></button>
           </div>
           <div class="modal-body">
-            <form id="startProcWizardForm">
-              <div id="wizardStep1" class="wizard-step">
-                <h6>Step 1: Script Path</h6>
-                <input
-                  type="text"
-                  class="form-control mb-2"
-                  id="wizardScript"
-                  placeholder="Script path (required)"
-                  required
-                />
-                <div
-                  id="wizardStep1Error"
-                  class="text-danger small mb-2"
-                  style="display: none"
-                ></div>
-                <button type="button" class="btn btn-primary float-end" id="wizardNext1">
-                  Next &raquo;
-                </button>
+            <form id="startProcForm">
+              <div class="mb-2">
+                <label class="form-label">Script Path</label>
+                <input type="text" class="form-control" id="startScript" required />
               </div>
-              <div id="wizardStep2" class="wizard-step" style="display: none">
-                <h6>Step 2: Name & Arguments</h6>
-                <input
-                  type="text"
-                  class="form-control mb-2"
-                  id="wizardName"
-                  placeholder="Process name (optional)"
-                />
-                <input
-                  type="text"
-                  class="form-control mb-2"
-                  id="wizardArgs"
-                  placeholder="Arguments (space separated, optional)"
-                />
-                <button type="button" class="btn btn-secondary" id="wizardBack2">
-                  &laquo; Back
-                </button>
-                <button type="button" class="btn btn-primary float-end" id="wizardNext2">
-                  Next &raquo;
-                </button>
+              <div class="mb-2">
+                <label class="form-label">Process Name (optional)</label>
+                <input type="text" class="form-control" id="startName" />
               </div>
-              <div id="wizardStep3" class="wizard-step" style="display: none">
-                <h6>Step 3: Environment Variables</h6>
-                <textarea
-                  class="form-control mb-2"
-                  id="wizardEnv"
-                  rows="3"
-                  placeholder="key=value, one per line (optional)"
-                ></textarea>
-                <button type="button" class="btn btn-secondary" id="wizardBack3">
-                  &laquo; Back
-                </button>
-                <button type="button" class="btn btn-primary float-end" id="wizardNext3">
-                  Next &raquo;
-                </button>
+              <div class="mb-2">
+                <label class="form-label">Arguments (space separated, optional)</label>
+                <input type="text" class="form-control" id="startArgs" />
               </div>
-              <div id="wizardStep4" class="wizard-step" style="display: none">
-                <h6>Step 4: Review & Start</h6>
-                <pre class="bg-dark text-light p-2 rounded" id="wizardReview"></pre>
-                <div
-                  id="wizardStep4Error"
-                  class="text-danger small mb-2"
-                  style="display: none"
-                ></div>
-                <button type="button" class="btn btn-secondary" id="wizardBack4">
-                  &laquo; Back
-                </button>
-                <button type="button" class="btn btn-success float-end" id="wizardStartBtn">
-                  Start Process
-                </button>
+              <div class="mb-2">
+                <label class="form-label"
+                  >Environment Variables (key=value, one per line, optional)</label
+                >
+                <textarea class="form-control" id="startEnv" rows="3"></textarea>
               </div>
             </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="startProcSubmit">
+              Start Process
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           </div>
         </div>
       </div>
@@ -536,18 +396,18 @@
         </div>
       </div>
     </div>
-    <!-- Live Monitoring Modal -->
+    <!-- Modal for scheduled restart management -->
     <div
       class="modal fade"
-      id="monitorModal"
+      id="scheduleRestartModal"
       tabindex="-1"
-      aria-labelledby="monitorModalLabel"
+      aria-labelledby="scheduleRestartModalLabel"
       aria-hidden="true"
     >
-      <div class="modal-dialog modal-lg">
+      <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="monitorModalLabel">Live Resource Monitor</h5>
+            <h5 class="modal-title" id="scheduleRestartModalLabel">Scheduled Restart</h5>
             <button
               type="button"
               class="btn-close"
@@ -556,17 +416,39 @@
             ></button>
           </div>
           <div class="modal-body">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <h6>CPU Usage (%)</h6>
-                <canvas id="cpuChart" height="180"></canvas>
+            <form id="scheduleRestartForm">
+              <div class="mb-2">
+                <label class="form-label">Frequency</label>
+                <select class="form-select" id="restartFrequency">
+                  <option value="daily">Daily</option>
+                  <option value="hourly">Hourly</option>
+                  <option value="custom">Custom (cron)</option>
+                </select>
               </div>
-              <div class="col-md-6 mb-3">
-                <h6>Memory Usage (MB)</h6>
-                <canvas id="memChart" height="180"></canvas>
+              <div class="mb-2" id="restartTimeGroup">
+                <label class="form-label">Time (HH:MM, 24h)</label>
+                <input type="time" class="form-control" id="restartTime" value="03:00" />
               </div>
-            </div>
-            <div id="monitorStats" class="mt-2 text-light small"></div>
+              <div class="mb-2 d-none" id="customCronGroup">
+                <label class="form-label">Custom Cron Expression</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="customCron"
+                  placeholder="e.g. 0 3 * * *"
+                />
+              </div>
+            </form>
+            <div id="scheduleRestartStatus" class="text-info small mt-2"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="saveRestartScheduleBtn">
+              Save Schedule
+            </button>
+            <button type="button" class="btn btn-danger" id="removeRestartScheduleBtn">
+              Remove Schedule
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
       </div>
@@ -575,76 +457,8 @@
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
       <div id="toastContainer"></div>
     </div>
-    <!-- PM2 Windows Service Wizard Modal -->
-    <div class="modal fade" id="serviceWizardModal" tabindex="-1" aria-labelledby="serviceWizardModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="serviceWizardModalLabel">PM2 Windows Service Wizard</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div id="serviceStatus" class="mb-3">Checking service status...</div>
-            <button class="btn btn-success mb-2" id="serviceInstallBtn" style="display:none">Install as Windows Service</button>
-            <button class="btn btn-danger mb-2" id="serviceUninstallBtn" style="display:none">Uninstall Service</button>
-            <div class="text-muted small">This will install/uninstall PM2 as a background Windows service using pm2-windows-service.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Dependency Graph Modal -->
-    <div class="modal fade" id="dependencyModal" tabindex="-1" aria-labelledby="dependencyModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="dependencyModalLabel">Process Dependencies</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div id="dependencyGraphArea">Loading...</div>
-            <div class="text-muted small mt-2">Dependencies are defined in process config ("dependsOn").</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Global Env Modal -->
-    <div class="modal fade" id="globalEnvModal" tabindex="-1" aria-labelledby="globalEnvModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="globalEnvModalLabel">Global Environment Variables</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <textarea class="form-control mb-2" id="globalEnvArea" rows="6" spellcheck="false"></textarea>
-            <input type="file" id="globalEnvFile" accept=".env,text/plain" style="display:none" />
-            <div class="d-flex gap-2 mb-2">
-              <button class="btn btn-primary btn-sm" id="globalEnvSaveBtn">Save</button>
-              <button class="btn btn-outline-secondary btn-sm" id="globalEnvImportBtn">Import .env</button>
-              <button class="btn btn-outline-secondary btn-sm" id="globalEnvExportBtn">Export .env</button>
-            </div>
-            <div class="text-muted small">These variables are available to all PM2 processes unless overridden per process.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Process History Modal -->
-    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="historyModalLabel">Process History</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div id="historyArea">Loading...</div>
-          </div>
-        </div>
-      </div>
-    </div>
     <!-- Bootstrap and renderer logic -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

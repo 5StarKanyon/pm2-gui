@@ -4,9 +4,8 @@
 //
 // NOTE: Keep all Node.js/PM2 logic here. Only expose safe APIs to renderer via preload.js.
 
-const { Buffer } = require('buffer'); // Fix: Ensure Buffer is defined for Node.js
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const pm2 = require('pm2');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -19,8 +18,8 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    frame: true, // Show the default OS window bar
-    // Remove custom titleBarStyle for native controls
+    frame: false, // Hide the default OS window bar
+    titleBarStyle: 'hidden', // Hide the native title bar
     backgroundColor: '#181a1b', // Dark background
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'), // Secure contextBridge
@@ -31,16 +30,13 @@ const createWindow = () => {
 };
 
 // App ready: create window, handle macOS dock behavior
-
 app.whenReady().then(() => {
-  Menu.setApplicationMenu(null);
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
-  return null; // ESLint: then() should return a value
 });
 
 // Quit when all windows are closed, except on macOS
@@ -155,110 +151,91 @@ ipcMain.handle('pm2-get-config', async (event, id) => {
   return pm2Promise('describe', id).then((proc) => proc[0]?.pm2_env || {});
 });
 // Set process config (not supported by PM2, placeholder)
-// eslint-disable-next-line no-unused-vars
 ipcMain.handle('pm2-set-config', async (event, id, config) => {
   await ensurePM2Connected();
   // PM2 does not support direct config editing; this is a placeholder
   return { success: false, message: 'Direct config editing not supported via API.' };
 });
-
-// --- PM2 Windows Service, Dependency, Env, and History IPC HANDLERS ---
-const fs = require('fs');
-const os = require('os');
-
-// PM2 Windows Service Status
-ipcMain.handle('pm2-get-service-status', async () => {
-  // Check if pm2-windows-service is installed and running
-  try {
-    const Service = require('node-windows').Service;
-    const svc = new Service({
-      name: 'PM2',
-    });
-    // node-windows Service API is async, but we can check existence by file
-    const exists = fs.existsSync(path.join(os.homedir(), 'AppData', 'Roaming', 'pm2', 'service-install.log'));
-    return { installed: exists };
-  } catch (e) {
-    return { installed: false, error: e.message };
-  }
-});
-// Install PM2 as Windows Service
-ipcMain.handle('pm2-install-service', async () => {
-  // Use pm2-windows-service CLI
-  const { execSync } = require('child_process');
-  try {
-    execSync('npx pm2-service-install -y', { stdio: 'ignore' });
-    return { success: true };
-  } catch (e) {
-    throw new Error(e.message || 'Failed to install service');
-  }
-});
-// Uninstall PM2 Windows Service
-ipcMain.handle('pm2-uninstall-service', async () => {
-  const { execSync } = require('child_process');
-  try {
-    execSync('npx pm2-service-uninstall -y', { stdio: 'ignore' });
-    return { success: true };
-  } catch (e) {
-    throw new Error(e.message || 'Failed to uninstall service');
-  }
-});
-// Get process dependencies (from config)
-ipcMain.handle('pm2-get-dependencies', async () => {
+// Set environment variables for a process and restart it
+ipcMain.handle('pm2-set-env', async (event, id, newEnv) => {
   await ensurePM2Connected();
-  const list = await pm2Promise('list');
-  return list.map(proc => {
-    const env = proc.pm2_env || {};
-    return {
-      name: env.name,
-      dependsOn: Array.isArray(env.dependsOn) ? env.dependsOn : [],
-    };
+  // Get current process info
+  const procList = await pm2Promise('describe', id);
+  const proc = procList[0];
+  if (!proc) {
+    return { success: false, message: 'Process not found' };
+  }
+  // Merge new env with existing env
+  const mergedEnv = { ...proc.pm2_env.env, ...newEnv };
+  // Restart with new env
+  return new Promise((resolve) => {
+    pm2.restart(
+      {
+        name: proc.name,
+        env: mergedEnv,
+      },
+      (err) => {
+        if (err) {
+          resolve({ success: false, message: err.message });
+        } else {
+          resolve({ success: true });
+        }
+      }
+    );
   });
 });
-// Global env management (simple JSON file in userData)
-const globalEnvPath = path.join(app.getPath('userData'), 'global.env.json');
-ipcMain.handle('pm2-get-global-env', async () => {
-  try {
-    if (fs.existsSync(globalEnvPath)) {
-      return JSON.parse(fs.readFileSync(globalEnvPath, 'utf8'));
-    }
-    return {};
-  } catch (e) {
-    return {};
+
+// Schedule a task to restart all PM2 processes (Windows/Linux)
+ipcMain.handle('schedule-pm2-restart', async (event, schedule) => {
+  // schedule: { time: 'HH:MM', frequency: 'daily'|'hourly'|'custom', custom: string }
+  const isWin = process.platform === 'win32';
+  const exec = require('child_process').exec;
+  let command,
+    taskName = 'PM2RestartAll';
+  if (isWin) {
+    // Windows: use schtasks
+    let time = schedule.time || '03:00';
+    let freq = schedule.frequency === 'hourly' ? 'HOURLY' : 'DAILY';
+    let schtasksCmd = `schtasks /Create /F /TN ${taskName} /TR "pm2 restart all" /SC ${freq} /ST ${time}`;
+    command = schtasksCmd;
+  } else {
+    // Linux: use cron
+    let cronTime = schedule.custom || (schedule.frequency === 'hourly' ? '0 * * * *' : '0 3 * * *');
+    let cronCmd = `(crontab -l 2>/dev/null; echo "${cronTime} pm2 restart all # PM2RestartAll") | sort | uniq | crontab -`;
+    command = cronCmd;
   }
-});
-ipcMain.handle('pm2-set-global-env', async (event, env) => {
-  try {
-    fs.writeFileSync(globalEnvPath, JSON.stringify(env, null, 2), 'utf8');
-    return { success: true };
-  } catch (e) {
-    throw new Error('Failed to save global env: ' + e.message);
-  }
-});
-// Process history (simulate with restart/crash info from pm2_env)
-ipcMain.handle('pm2-get-process-history', async (event, id) => {
-  await ensurePM2Connected();
-  const desc = await pm2Promise('describe', id);
-  const env = desc[0]?.pm2_env;
-  if (!env) return [];
-  const history = [];
-  if (env.pm_uptime) {
-    history.push({ date: new Date(env.pm_uptime).toLocaleString(), event: 'Started', code: 0 });
-  }
-  if (Array.isArray(env.axm_actions)) {
-    env.axm_actions.forEach((a) => {
-      if (a.action === 'restart') {
-        history.push({ date: new Date(a.date).toLocaleString(), event: 'Restarted', code: a.code });
+  return new Promise((resolve) => {
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        resolve({ success: false, message: stderr || err.message });
+      } else {
+        resolve({ success: true });
       }
     });
+  });
+});
+
+// Remove scheduled restart task
+ipcMain.handle('remove-pm2-restart-schedule', async () => {
+  const isWin = process.platform === 'win32';
+  const exec = require('child_process').exec;
+  let command,
+    taskName = 'PM2RestartAll';
+  if (isWin) {
+    command = `schtasks /Delete /F /TN ${taskName}`;
+  } else {
+    // Remove cron line with # PM2RestartAll
+    command = `crontab -l 2>/dev/null | grep -v '# PM2RestartAll' | crontab -`;
   }
-  if (env.exit_code !== undefined && env.exit_code !== 0) {
-    history.push({ date: new Date(env.pm_uptime).toLocaleString(), event: 'Crashed', code: env.exit_code });
-  }
-  // Add restart count
-  if (env.restart_time) {
-    history.push({ date: '-', event: 'Restart Count', code: env.restart_time });
-  }
-  return history;
+  return new Promise((resolve) => {
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        resolve({ success: false, message: stderr || err.message });
+      } else {
+        resolve({ success: true });
+      }
+    });
+  });
 });
 
 // --- Window bar actions (minimize, maximize, close) ---

@@ -29,22 +29,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
     "@electron-forge/plugin-fuses": "^7.8.1",
     "@electron/fuses": "^1.8.0",
-    "@eslint/js": "^9.29.0",
-    "depcheck": "^1.4.7",
-    "electron": "37.1.0",
-    "eslint": "^9.29.0",
-    "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsdoc": "^51.2.1",
-    "eslint-plugin-n": "^17.20.0",
-    "eslint-plugin-prettier": "^5.5.0",
-    "eslint-plugin-promise": "^7.2.1",
-    "eslint-plugin-security": "^3.0.1",
-    "eslint-plugin-spellcheck": "^0.0.20",
-    "knip": "^5.61.2",
-    "prettier": "^3.5.3",
-    "prettier-plugin-packagejson": "^2.5.15",
-    "prettier-plugin-sql": "^0.19.1"
+    "electron": "37.1.0"
   },
   "productName": "pm2-gui"
 }
