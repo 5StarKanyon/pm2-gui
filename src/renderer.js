@@ -939,23 +939,20 @@ startProcModalEl.addEventListener('hidden.bs.modal', () => {
 });
 
 // --- Window bar controls ---
-window.addEventListener('DOMContentLoaded', () => {
-  // Attach window control button listeners after DOM is loaded
-  const minBtn = document.getElementById('minBtn');
-  const maxBtn = document.getElementById('maxBtn');
-  const closeBtn = document.getElementById('closeBtn');
-  if (window.windowControls) {
-    if (minBtn) {
-      minBtn.onclick = window.windowControls.minimize;
-    }
-    if (maxBtn) {
-      maxBtn.onclick = window.windowControls.maximize;
-    }
-    if (closeBtn) {
-      closeBtn.onclick = window.windowControls.close;
-    }
+const minBtn = document.getElementById('minBtn');
+const maxBtn = document.getElementById('maxBtn');
+const closeBtn = document.getElementById('closeBtn');
+if (window.windowControls) {
+  if (minBtn) {
+    minBtn.onclick = window.windowControls.minimize;
   }
-});
+  if (maxBtn) {
+    maxBtn.onclick = window.windowControls.maximize;
+  }
+  if (closeBtn) {
+    closeBtn.onclick = window.windowControls.close;
+  }
+}
 
 // --- FUTURE IDEAS ---
 // - Add bulk actions (multi-select processes)
