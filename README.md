@@ -86,10 +86,10 @@ npm start
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="docs/process-list.png" width="600" alt="Main UI" />
-  <img src="docs/process-creation.png" width="600" alt="Process Modal" />
-  <img src="docs/logs-config.png" width="600" alt="Process Modal" />
-  <img src="docs/restart.png" width="600" alt="Process Modal" />
+  <img src="docs/process-list.png" alt="Main UI" />
+  <img src="docs/process-creation.png" alt="Process Modal" />
+  <img src="docs/logs-config.png" alt="Process Modal" />
+  <img src="docs/restart.png" alt="Process Modal" />
 </p>
 
 ## ⚙️ Configuration & Advanced Usage
