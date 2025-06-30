@@ -4,9 +4,6 @@
   <a href="https://github.com/TF2-Price-DB/pm2-gui">
     <img src="https://img.shields.io/github/stars/TF2-Price-DB/pm2-gui?style=social" alt="GitHub stars">
   </a>
-  <a href="https://github.com/TF2-Price-DB/pm2-gui/actions">
-    <img src="https://github.com/TF2-Price-DB/pm2-gui/actions/workflows/main.yml/badge.svg" alt="CI Status">
-  </a>
   <a href="https://github.com/TF2-Price-DB/pm2-gui/blob/main/.eslintrc.js">
     <img src="https://img.shields.io/badge/code%20style-eslint-blue.svg" alt="ESLint">
   </a>
@@ -20,7 +17,7 @@
 
 ---
 
-> **A modern, cross-platform Electron GUI for managing your local PM2 processes.**
+**A modern, cross-platform Electron GUI for managing your local PM2 processes.**
 
 ---
 
@@ -64,7 +61,7 @@ npm start
 - View and (where supported) edit process configs
 - Start new processes with custom scripts
 - Modern Bootstrap-based GUI
-- Electron-based cross-platform GUI (Windows supported, others coming soon)
+- Electron-based cross-platform GUI
 
 ---
 
