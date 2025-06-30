@@ -85,16 +85,12 @@ npm start
 
 ## 📸 Screenshots
 
-<!--
-Add screenshots here for visual appeal. Example:
-
 <p align="center">
-  <img src="docs/screenshot-main.png" width="600" alt="Main UI" />
-  <img src="docs/screenshot-modal.png" width="600" alt="Process Modal" />
+  <img src="docs/process-list.png" width="600" alt="Main UI" />
+  <img src="docs/process-creation.png" width="600" alt="Process Modal" />
+  <img src="docs/logs-config.png" width="600" alt="Process Modal" />
+  <img src="docs/restart.png" width="600" alt="Process Modal" />
 </p>
--->
-
----
 
 ## ⚙️ Configuration & Advanced Usage
 

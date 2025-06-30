@@ -1,3 +1,5 @@
+/* eslint-disable no-useless-escape */
+/* eslint-disable no-undef */
 // renderer.js - Handles UI and PM2 API interaction
 //
 // Main frontend logic for the PM2 GUI app. Handles all UI events, IPC calls to main process, and live updates.

@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // index.js - Main Electron process for PM2 GUI
 //
 // Handles window creation, secure IPC, and all backend logic for PM2 process management.
